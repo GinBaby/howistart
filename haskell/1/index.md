@@ -63,13 +63,14 @@ cabal.sandbox.config
 cabal.config
 ```
 
+
 ## Project layout
 
 There's not a prescribed project layout, but there are a few guidelines I would advise following.
 
 One is that [Edward Kmett's lens library](https://github.com/ekmett/lens) is not only a fantastic library in its own right, but is also a great resource for people wanting to see how to structure a Haskell project, write and generate `Haddock` documentation, and organize your namespaces. Kmett's library follows [Hackage guidelines](http://hackage.haskell.org/packages/) on what namespaces and categories to use for his libraries.
 
-There is an alternative namespacing pattern demonstrated by [Pipes, a streaming library](http://hackage.haskell.org/package/pipes). It uses a top-level eponymous namespace.
+There is an alternative namespacing pattern demonstrated by [Pipes, a streaming library](http://hackage.haskell.org/package/pipes). It uses a top-level eponymous namespace. For an example of another popular project you could also look at [Pandoc](https://github.com/jgm/pandoc/) for examples of how to organize non-trivial Haskell projects.
 
 I'm going to follow Kmett's lead and layout my project like so:
 
@@ -78,16 +79,18 @@ $ tree
 .
 ├── LICENSE
 ├── Setup.hs
+├── cabal.sandbox.config
 ├── garrulous.cabal
 ├── src
+│   ├── Main.hs
 │   └── Network
 │       └── Chat
-│           ├── Garrulous
 │           └── Garrulous.hs
 └── tests
     └── tests.hs
-5 directories, 4 files
+4 directories, 7 files
 ```
+
 
 ## Editing the Cabal file
 
@@ -121,8 +124,16 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Network.Chat.Garrulous
-  main-is:             Network.Chat.Garrulous
-  build-depends:       base >=4.7 && <4.8
+  ghc-options:         -Wall
+  build-depends:       base >= 4.7 && <5
+  default-language:    Haskell2010
+
+executable garrulous
+  ghc-options:         -Wall -threaded
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  build-depends:       garrulous,
+                       base >= 4.7 && <5
   default-language:    Haskell2010
 ```
 
@@ -132,4 +143,37 @@ Set the description so Cabal would stop squawking about it.
 
 Set `hs-source-dirs` to `src` so Cabal knows where my modules are.
 
-Set `main-is` to `Network.Chat.Garrulous` so the compiler knows what function to call when the program starts.
+Added a named executable stanza to the Cabal file so I can build a binary by that name and run it.
+
+Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what main function to use for that binary.
+
+Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
+
+Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
+
+We included `garrulous` as a dependency for the executable stanza so that it can see the library.
+
+
+## Building and interacting with your program
+
+First, the contents of `src/Main.hs`:
+
+```haskell
+module Main where
+
+import Network.Chat.Garrulous
+
+main :: IO ()
+main = putStrLn ("hello, world! a is " ++ show a)
+```
+
+One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
+
+Then `src/Network/Chat/Garrulous.hs`:
+
+```haskell
+module Network.Chat.Garrulous where
+
+a :: Int
+a = 1
+```
