@@ -166,8 +166,195 @@ The contents of `src/Main.hs`:
 ```haskell
 module Main where
 
-a :: Int
-a = 1
+main = putStrLn "hello"
 ```
 
 One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
+
+For now, we've left Main to be very simple, making it just a
+`putStrLn` of the string `"Hello"`. To validate that everything is
+working, lets build and run this mostly pointless program.
+
+First we create our Cabal sandbox so that our dependencies are
+isolated to this project.
+
+```bash
+$ cabal sandbox init
+```
+
+Then we install our dependencies. These should get installed into the
+Cabal sandbox package-db now that our sandbox has been created.
+Otherwise they'd get installed into our user package-db located in
+our home directory, which would be global to all the projects on our
+current user account.
+
+```bash
+$ cabal install --only-dependencies
+```
+
+Now we're going to build our project.
+
+```bash
+$ cabal build
+```
+
+If this succeeds, we should get a binary named `bassbull` in
+`dist/build/bassbull`. To run this, do the following.
+
+```bash
+$ ./dist/build/bassbull/bassbull
+hello
+$
+```
+
+If that worked, lets move onto writing a little csv processor.
+
+## Writing a program to process csv data
+
+
+One thing to note before we begin is that you can fire up a
+project-aware Haskell REPL using `cabal repl`. The benefit of
+doing so is that you can write and type-check code interactively
+as you explore new and unfamiliar libraries or just to refresh
+your memory about existing code.
+
+You can do so by running it in your shell like so.
+
+```bash
+$ cabal repl
+```
+
+If you do, you should see a bunch of stuff about loading packages
+installed for the project and then a `Prelude>` prompt.
+
+```
+[1 of 1] Compiling Main             ( Main.hs, interpreted )
+Ok, modules loaded: Main.
+Prelude>
+```
+
+Now we can load our `src/Main.hs` in the REPL.
+
+```
+Prelude> :load src/Main.hs
+[1 of 1] Compiling Main             ( Main.hs, interpreted )
+Ok, modules loaded: Main.
+Prelude> main
+hello
+Prelude> 
+```
+
+Becoming comfortable with the REPL can be a serious boon to
+productivity. There is editor integration for those that want it as
+well.
+
+Now we're going to update our `src/Main.hs`.
+
+```haskell
+module Main where
+
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Vector as V
+
+-- a simple type alias for data
+type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
+
+-- from cassava
+import Data.Csv
+
+main :: IO ()
+main = do
+  csvData <- BL.readFile "batting.csv"
+  let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
+  let summed = fmap (V.foldr summer 0) v
+  putStrLn $ "Total atBats was: " ++ (show summed)
+  where summer (name, year :: Int, team, atBats :: Int) sum = sum + atBats
+```
+
+Lets break down this code a little.
+
+First, we need to read in a file. We called the lazy `ByteString`
+namespace `BL`. From that namespace we used `BL.readFile` which has
+type `FilePath -> IO ByteString`. It returns ByteString wrapped in IO
+because it returns a means of obtaining bytes which must be tagged
+with IO, not just the data itself.
+
+You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
+
+We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns.
+`csvData` has type `ByteString` due to binding over `IO`.
+
+```haskell
+main :: IO ()
+main = do
+  csvData <- BL.readFile "batting.csv"
+```
+
+`v` is the type you see at the right with the type assignment operator ::
+I'm assigning the type to dispatch the typeclass decode uses to
+parse csv data. See more about [the typeclass cassava uses for parsing
+csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
+
+In this case, because I defined a `type` alias of a tuple for my record, I get
+my parsing code for free (already defined for tuples, `bytestring`, and
+`Int`).
+
+```haskell
+  let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
+```
+
+Using the record summing function in the bottom where
+clause. First we fmap over the `Either String (V.Vector BaseballStats)`
+this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`
+We partially applied the `Vector` folding function `foldr` to the
+summing function which is how we're folding and the number `0` so we
+have a "start" value for the fold. Generally in Haskell we don't write
+raw loops or recurse directly, we use higher order functions and
+abstractions that wrap up and give names to common things programmers
+do. One of those very common things is folding data.
+
+
+```haskell
+  let summed = fmap (V.foldr summer 0) v
+```
+
+Lastly we stringify the summed up count using `show`, then
+concatenate that with a string to describe what we're printing,
+then print the whole shebang using `putStrLn`. The `$` is just so
+everything to the right of the `$` gets evaluated before whatever is
+to the left. To see why I did that remove the `$` and build the
+code. Alternatively, I could've used parenatheses in the usual fashion.
+
+```haskell
+  putStrLn $ "Total atBats was: " ++ (show summed)
+```
+
+This is the folding function we mentioned earlier. You can hang `where`
+clauses off of functions which are a bit like `let` but they
+come last. `Where` clauses are more common in Haskell than `let`, but
+there's nothing wrong with using both.
+
+Our folding function here takes two arguments, the tuple record (we'll
+have many of those in the vector of records), and the sum of our data
+so far.
+
+```haskell
+  where summer (name, year :: Int, team, atBats :: Int) sum = sum + atBats
+```
+
+## Building and running our csv parsing program
+
+First we're going to rebuild the project.
+
+```bash
+$ cabal build
+```
+
+Then, assuming we have the `batting.csv` I mentioned earlier in our
+current directory, we can run our program and get the results.
+
+```bash
+$ ./dist/build/bassbull/bassbull
+Total atBats was: Right 4858210
+$
+```
