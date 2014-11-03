@@ -20,16 +20,23 @@ After you've finished the install instructions, `ghc`, `cabal`, and `ghci` shoul
 
 ## What we're going to make
 
-We're going to make a chat server for a protocol that's a bit like IRC. One difference is that it will be text-only. I'm going to name mine garrulous, but you can use whatever you want.
+We're going to write a little csv parser for some baseball data. You can download the data from
+[here](https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv). If
+you want to download it via the terminal on a Unix-alike (Mac, Linux, BSD, etc) you can do so via:
 
+```bash
+$ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv
+```
+
+It should be about 2.3mb when it's all said and done.
 
 ## Getting your project started
 
 First we're going to make our directory for our project wherever we tend to stash our work. If we're on a Unix-alike, that'll look something like:
 
 ```bash
-$ mkdir garrulous
-$ cd garrulous
+$ mkdir bassbull
+$ cd bassbull
 ```
 
 Having done that, we're now going to use `Cabal`, our GHC Haskell dependency manager and build tool, to create some initial files for us. You have a couple options here. You can use the interactive helper or you can define everything non-interactively in one go.
@@ -43,10 +50,13 @@ $ cabal init
 And the command I used to do it non-interactively (edit as appropriate for your project):
 
 ```bash
-$ cabal init -n -l MIT --is-library --language=Haskell2010 -u bitemyapp.com -a 'Chris Allen' -c Network -s 'A chat service for friends' -p garrulous
+$ cabal init -n -l BSD3 --is-executable --language=Haskell2010 -u
+bitemyapp.com -a 'Chris Allen' -c Data -s 'Churning some CSV data' -p bassbull
 ```
 
-I'm also going to add the gitignore from Github's gitignore repository for Haskell so we don't accidentally check in unnecessary build artifacts or other things inessential to the project.
+I'm also going to add the gitignore from Github's gitignore repository
+plus some additions for Haskell so we don't accidentally check in
+unnecessary build artifacts or other things inessential to the project.
 
 ```
 dist
@@ -61,6 +71,9 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
+*.prof
+*.hp
+*.aux
 ```
 
 
@@ -72,7 +85,7 @@ One is that [Edward Kmett's lens library](https://github.com/ekmett/lens) is not
 
 There is an alternative namespacing pattern demonstrated by [Pipes, a streaming library](http://hackage.haskell.org/package/pipes). It uses a top-level eponymous namespace. For an example of another popular project you could also look at [Pandoc](https://github.com/jgm/pandoc/) for examples of how to organize non-trivial Haskell projects.
 
-I'm going to follow Kmett's lead and layout my project like so:
+I'm going to layout my project like so:
 
 ```bash
 $ tree
@@ -80,21 +93,18 @@ $ tree
 ├── LICENSE
 ├── Setup.hs
 ├── cabal.sandbox.config
-├── garrulous.cabal
+├── bassbull.cabal
 ├── src
 │   ├── Main.hs
-│   └── Network
-│       └── Chat
-│           └── Garrulous.hs
-└── tests
-    └── tests.hs
 4 directories, 7 files
 ```
 
+Ordinarily I'd structure things a little more, but there isn't a lot
+to this project.
 
 ## Editing the Cabal file
 
-We need to fix up our `cabal` file a bit. Mine is named `garrulous.cabal` and is in the top level directory of the project.
+We need to fix up our `cabal` file a bit. Mine is named `bassbull.cabal` and is in the top level directory of the project.
 
 Before we start making changes, I'm going to init my version control (git, for me) so I can track my changes and not lose any work.
 
@@ -107,33 +117,28 @@ $ git commit -am "Initial commit"
 Here's what I changed my `cabal` file to:
 
 ```
-name:                garrulous
+name:                bassbull
 version:             0.1.0.0
-synopsis:            A chat service for friends
-description:         Standalone chat server
+synopsis:            Processing some csv data
+description:         Baseball data analysis
 homepage:            bitemyapp.com
-license:             MIT
+license:             BSD3
 license-file:        LICENSE
 author:              Chris Allen
 maintainer:          cma@bitemyapp.com
 copyright:           2014, Chris Allen
-category:            Network
+category:            Data
 build-type:          Simple
 cabal-version:       >=1.10
-
-library
-  hs-source-dirs:      src
-  exposed-modules:     Network.Chat.Garrulous
-  ghc-options:         -Wall
-  build-depends:       base >= 4.7 && <5
-  default-language:    Haskell2010
 
 executable garrulous
   ghc-options:         -Wall -threaded
   hs-source-dirs:      src
   main-is:             Main.hs
-  build-depends:       garrulous,
-                       base >= 4.7 && <5
+  build-depends:       base >= 4.7 && <5,
+                       bytestring,
+                       vector,
+                       cassava
   default-language:    Haskell2010
 ```
 
@@ -156,24 +161,13 @@ We included `garrulous` as a dependency for the executable stanza so that it can
 
 ## Building and interacting with your program
 
-First, the contents of `src/Main.hs`:
+The contents of `src/Main.hs`:
 
 ```haskell
 module Main where
 
-import Network.Chat.Garrulous
-
-main :: IO ()
-main = putStrLn ("hello, world! a is " ++ show a)
-```
-
-One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
-
-Then `src/Network/Chat/Garrulous.hs`:
-
-```haskell
-module Network.Chat.Garrulous where
-
 a :: Int
 a = 1
 ```
+
+One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
