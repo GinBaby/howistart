@@ -5,6 +5,7 @@ I'd like to show you how to write a package in Haskell and how you could hypothe
 
 ## Installing tools for writing Haskell code
 
+
 The most popular compiler for Haskell is `GHC` and you use `Cabal` along-side `GHC` to manage projects and their dependencies. Packaging itself is part of `GHC` via `ghc-pkg`.
 
 To get GHC and Cabal installed, use one of the following links:
@@ -20,6 +21,7 @@ After you've finished the install instructions, `ghc`, `cabal`, and `ghci` shoul
 
 ## What we're going to make
 
+
 We're going to write a little csv parser for some baseball data. You can download the data from
 [here](https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv). If
 you want to download it via the terminal on a Unix-alike (Mac, Linux, BSD, etc) you can do so via:
@@ -30,7 +32,9 @@ $ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv
 
 It should be about 2.3mb when it's all said and done.
 
+
 ## Getting your project started
+
 
 First we're going to make our directory for our project wherever we tend to stash our work. If we're on a Unix-alike, that'll look something like:
 
@@ -79,6 +83,7 @@ cabal.config
 
 ## Project layout
 
+
 There's not a prescribed project layout, but there are a few guidelines I would advise following.
 
 One is that [Edward Kmett's lens library](https://github.com/ekmett/lens) is not only a fantastic library in its own right, but is also a great resource for people wanting to see how to structure a Haskell project, write and generate `Haddock` documentation, and organize your namespaces. Kmett's library follows [Hackage guidelines](http://hackage.haskell.org/packages/) on what namespaces and categories to use for his libraries.
@@ -102,7 +107,9 @@ $ tree
 Ordinarily I'd structure things a little more, but there isn't a lot
 to this project.
 
+
 ## Editing the Cabal file
+
 
 We need to fix up our `cabal` file a bit. Mine is named `bassbull.cabal` and is in the top level directory of the project.
 
@@ -160,6 +167,7 @@ We included `garrulous` as a dependency for the executable stanza so that it can
 
 
 ## Building and interacting with your program
+
 
 The contents of `src/Main.hs`:
 
@@ -255,12 +263,11 @@ module Main where
 
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
+-- from cassava
+import Data.Csv
 
 -- a simple type alias for data
 type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
-
--- from cassava
-import Data.Csv
 
 main :: IO ()
 main = do
@@ -268,7 +275,7 @@ main = do
   let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
   let summed = fmap (V.foldr summer 0) v
   putStrLn $ "Total atBats was: " ++ (show summed)
-  where summer (name, year :: Int, team, atBats :: Int) sum = sum + atBats
+  where summer (name, year, team, atBats) n = n + atBats
 ```
 
 Lets break down this code a little.
@@ -331,18 +338,22 @@ code. Alternatively, I could've used parenatheses in the usual fashion.
 
 This is the folding function we mentioned earlier. You can hang `where`
 clauses off of functions which are a bit like `let` but they
-come last. `Where` clauses are more common in Haskell than `let`, but
+come last. `where` clauses are more common in Haskell than `let` clauses, but
 there's nothing wrong with using both.
 
 Our folding function here takes two arguments, the tuple record (we'll
 have many of those in the vector of records), and the sum of our data
 so far.
 
+Here `n` is the sum we're carrying along as fold the `Vector` of `BaseballStats`.
+
 ```haskell
-  where summer (name, year :: Int, team, atBats :: Int) sum = sum + atBats
+  where summer (name, year, team, atBats) n = n + atBats
 ```
 
+
 ## Building and running our csv parsing program
+
 
 First we're going to rebuild the project.
 
@@ -358,3 +369,210 @@ $ ./dist/build/bassbull/bassbull
 Total atBats was: Right 4858210
 $
 ```
+
+
+## Refactoring our code a bit
+
+Splitting out logic into independent functions is a common method for making Haskell code more composable and easy to read.
+
+To that end, we'll clean up our example a bit.
+
+First, we don't care about `name`, `year`, and `team` for our folding code.
+
+So we're going to use the Haskell idiom of bindings things we don't care about to `_`.
+
+This changes our fold from this:
+
+```haskell
+where summer (name, year, team, atBats) sum = sum + atBats
+```
+
+To this:
+
+```haskell
+where summer (_, _, _, atBats) sum = sum + atBats
+```
+
+Next we'll make our extraction of the 'at bats' from the tuple more compositional. If you'd like to play with this further, consider rewriting our example program at the end of this article into using a Haskell record instead of a tuple. I used a tuple here because Cassava already understands how to parse them, sparing me having to write that code.
+
+First we'll add `fourth`:
+
+```haskell
+fourth :: (a, b, c, d) -> d
+fourth (_, _, _, d) = d
+```
+
+Then we'll rewrite our folding function again from:
+
+```haskell
+where summer (_, _, _, atBats) n = n + atBats
+```
+
+Into:
+
+```haskell
+where summer r n = n + fourth r
+```
+
+Here we can use something called *eta reduction* to remove the explicit record and sum values to make it point-free. Since our function is really just about composing the extraction of the fourth value from the tuple and summing that value with the summed up `atBat` values so far, this makes the code quite concise.
+
+You can read more about this in [the article on pointfree programming in Haskell](https://www.haskell.org/haskellwiki/Pointfree).
+
+To that end, we go from:
+
+```haskell
+where summer r n = n + fourth r
+```
+
+to:
+
+```haskell
+where summer = (+) . fourth
+```
+
+First `fourth` gets applied to the `r` argument, then `(+)` is composed so that it is applied to the result of `fourth r` and the value `n`.
+
+We should also split out our decoding of `BaseballStats` from CSV data.
+
+We're going to move this code:
+
+```haskell
+let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
+```
+
+Into an independent function:
+
+```haskell
+baseballStats :: BL.ByteString -> Either String (V.Vector BaseballStats)
+baseballStats = decode NoHeader
+```
+
+Then `summed` becomes:
+
+```haskell
+let summed = fmap (V.foldr summer 0) (baseballStats csvData)
+```
+
+With that bit of tidying done, we should have:
+
+```haskell
+module Main where
+
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Vector as V
+-- cassava
+import Data.Csv
+
+type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
+
+fourth :: (a, b, c, d) -> d
+fourth (_, _, _, d) = d
+
+baseballStats :: BL.ByteString -> Either String (V.Vector BaseballStats)
+baseballStats = decode NoHeader
+
+main :: IO ()
+main = do
+  csvData <- BL.readFile "batting.csv"
+  let summed = fmap (V.foldr summer 0) (baseballStats csvData)
+  putStrLn $ "Total atBats was: " ++ (show summed)
+  where summer = (+) . fourth
+```
+
+
+## Streaming
+
+
+We can improve upon what we have here. Currently we're going to use as much memory as it takes to store the entirety of the csv file in memory, but we don't really have to do that to sum up the records!
+
+Since we're just adding the current records' "at bats" with the sum we've accumulated so far, we only really need to read one record into memory at a time. By default Cassava will load the csv into a `Vector` for convenience, but fortunately it has a streaming module so we can stream the data incrementally and fold our result without loading the entire dataset at once.
+
+First, we're going to drop Cassava's default module for the streaming module.
+
+Changing from this:
+
+```haskell
+-- cassava 
+import Data.Csv
+```
+
+To this:
+
+```haskell
+-- cassava 
+import Data.Csv.Streaming
+```
+
+Next, since we won't have a `Vector` anymore (we're streaming, not using in-memory collections), we can drop:
+
+```haskell
+import qualified Data.Vector as V
+```
+
+In favor using the `Foldable` typeclass Cassava offers for use with its streaming API:
+
+```haskell
+import qualified Data.Foldable as F
+```
+
+Then in order to use the streaming API we just change the definition of our `summed` from:
+
+```haskell
+let summed = fmap (V.foldr summer 0) (baseballStats csvData)
+```
+
+To:
+
+```haskell
+let summed = F.foldr summer 0 (baseballStats csvData)
+```
+
+As we are no longer loading the entire dataset into a single Vector, rather we are incrementally processing the results.
+
+The final result should look like:
+
+```haskell
+module Main where
+
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Foldable as F
+-- cassava
+import Data.Csv.Streaming
+
+type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
+
+fourth :: (a, b, c, d) -> d
+fourth (_, _, _, d) = d
+
+baseballStats :: BL.ByteString -> Records BaseballStats
+baseballStats = decode NoHeader
+
+main :: IO ()
+main = do
+  csvData <- BL.readFile "batting.csv"
+  let summed = F.foldr summer 0 (baseballStats csvData)
+  putStrLn $ "Total atBats was: " ++ (show summed)
+  where summer = (+) . fourth
+```
+
+Because Haskell has abstractions like the `Foldable` typeclass, we can talk about folding a dataset without caring about the underlying implementation! We could've used the `foldr` from `Foldable` on our `Vector`, a `List`, a `Tree`, a `Map` - not just Cassava's streaming API.
+
+
+## Wrapping up
+
+
+This is the end of our little journey in playing around with Haskell to process CSV data. Learning how to use abstractions like `Foldable`, `Functor` or use techniques like *eta reduction* takes practice! I have [a guide](https://github.com/bitemyapp/learnhaskell) for learning Haskell which has been compiled based on my experiences learning and teaching Haskell with many people over the last year or so.
+
+
+If you are curious and want to learn more, I strongly recommend you do a course of basic exercises first and then explore the way Haskell enables you think about your programs in terms of abstractions. Once you have the basics down, this can be done in a variety of ways. Some people like to attack practical problems, some like to follow along with white papers, some like to hammer out abstractions from scratch in focused exercises & examples.
+
+
+Things to do after finishing this article:
+
+- [Check out the Haskell community website](https://haskell.org)
+- [Learn about (unit|spec|property) testing Haskell software with Kazu Yamamoto's tutorial](https://github.com/kazu-yamamoto/unit-test-example/blob/master/markdown/en/tutorial.md)
+- [Search for code by *type* structurally with Hoogle](http://haskell.org/hoogle)
+- [Learn about Haddock, the Haskell source documentation tool](https://www.haskell.org/haddock/) and look at the many [examples](http://hackage.haskell.org/package/base-4.7.0.1/docs/Data-Functor.html) of Haskell package [documentation](http://hackage.haskell.org/package/pipes-4.1.3/docs/Pipes-Tutorial.html).
+
+
+More than anything else, my greatest wish would be that you develop a richer and more rewarding relationship with learning. Haskell has been a big part of this in my life.
