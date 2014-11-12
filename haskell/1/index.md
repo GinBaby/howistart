@@ -326,14 +326,25 @@ Prelude> appendOne [4, 5, 6]
 -- now with a product/record, if that
 -- is confusing think "struct" but better.
 Prelude> data Person = Person String Int String deriving Show
+
 Prelude> :t Person
 Person :: String -> Int -> String -> Person
+
+Prelude> :t Person "Chris" 415
+Person "Chris" 415 :: String -> Person
+
+Prelude> :t Person "Chris" 415 "Allen"
+Person "Chris" 415 "Allen" :: Person
+
 Prelude> let namedChris = Person "Chris"
 Prelude> namedChris 415 "Allen"
 Person "Chris" 415 "Allen"
+
 Prelude> Person "Chris" 415 "Allen"
 Person "Chris" 415 "Allen"
 ```
+
+This lets us apply some, but not all, of the arguments to a function and pass around the result as a function expecting the rest of the arguments.
 
 Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0) v`  would require explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. This is also a transcript from my interactive `ghci` REPL.
 
