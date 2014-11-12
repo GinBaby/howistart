@@ -25,10 +25,11 @@ After you've finished the install instructions, `ghc`, `cabal`, and `ghci` shoul
 We're going to write a little csv parser for some baseball data. You can download the data from [here](https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv). If you want to download it via the terminal on a Unix-alike (Mac, Linux, BSD, etc) you can do so via:
 
 ```bash
-$ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv
+;; this should go after you've created the directory below. Not sure how to structure it.
+$ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv > batting.csv
 ```
 
-It should be about 2.3mb when it's all said and done.
+It should be about 2.3 MB when it's all said and done.
 
 
 ## Getting your project started
@@ -39,6 +40,7 @@ First we're going to make our directory for our project wherever we tend to stas
 ```bash
 $ mkdir bassbull
 $ cd bassbull
+$ git init
 ```
 
 Having done that, we're now going to use `Cabal`, our GHC Haskell dependency manager and build tool, to create some initial files for us. You have a couple options here. You can use the interactive helper or you can define everything non-interactively in one go.
@@ -53,10 +55,14 @@ And the command I used to do it non-interactively (edit as appropriate for your 
 
 ```bash
 $ cabal init -n -l BSD3 --is-executable --language=Haskell2010 -u bitemyapp.com \
-  -a 'Chris Allen' -c Data -s 'Churning some CSV data' -p bassbull
+  -a 'Chris Allen' -c Data -s 'Processing some CSV data' -p bassbull
 ```
 
 I'm also going to add the gitignore from Github's gitignore repository plus some additions for Haskell so we don't accidentally check in unnecessary build artifacts or other things inessential to the project.
+
+```bash
+$ vim .gitignore
+```
 
 ```
 dist
@@ -78,6 +84,13 @@ cabal.config
 
 You might be wondering why we're telling `git` to ignore something called a "cabal sandbox". Cabal, unlike the package managers in other language ecosystems, requires direct and transitive dependencies to have compatible versions. For contrast, Maven will use the "closest" version. To avoid packages having conflicts, Cabal introduced sandboxes which let you do builds of your projects in a way that doesn't use your user package-db. Your user package-db is global to all your builds on your user account and this is almost never what you want. This is not dissimilar from `virtualenv` in the Python community. The `.cabal-sandbox` directory is where our build artifacts will go when we build our project or test cases. We don't want to version control that as it would bloat out the git repository and doesn't need to be version controlled.
 
+Before we start making changes, I'm going to init my version control (git, for me) so I can track my changes and not lose any work.
+
+```bash
+$ git init
+$ git add .
+$ git commit -am "Initial commit"
+```
 
 ## Project layout
 
@@ -88,7 +101,7 @@ One is that [Edward Kmett's lens library](https://github.com/ekmett/lens) is not
 
 There is an alternative namespacing pattern demonstrated by [Pipes, a streaming library](http://hackage.haskell.org/package/pipes). It uses a top-level eponymous namespace. For an example of another popular project you could also look at [Pandoc](https://github.com/jgm/pandoc/) for examples of how to organize non-trivial Haskell projects.
 
-I'm going to layout my project like so:
+Once we've finished laying out our project, it's going to look like this:
 
 ```bash
 $ tree
@@ -102,21 +115,13 @@ $ tree
 4 directories, 7 files
 ```
 
-Ordinarily I'd structure things a little more, but there isn't a lot to this project.
+Ordinarily I'd structure things a little more, but there isn't a lot to this project. Onward!
 
 
 ## Editing the Cabal file
 
 
-We need to fix up our `cabal` file a bit. Mine is named `bassbull.cabal` and is in the top level directory of the project.
-
-Before we start making changes, I'm going to init my version control (git, for me) so I can track my changes and not lose any work.
-
-```bash
-$ git init
-$ git add .
-$ git commit -am "Initial commit"
-```
+First we need to fix up our `cabal` file a bit. Mine is named `bassbull.cabal` and is in the top level directory of the project.
 
 Here's what I changed my `cabal` file to:
 
@@ -148,17 +153,14 @@ executable bassbull
 
 A few notable changes:
 
-Set the description so Cabal would stop squawking about it.
+* Set the description so Cabal would stop squawking about it.
+* Set `hs-source-dirs` to `src` so Cabal knows where my modules are.
+* Added a named executable stanza to the Cabal file so I can build a binary by that name and run it.
+* Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what main function to use for that binary.
+* Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
+* Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
+* Added libraries our project will depend on
 
-Set `hs-source-dirs` to `src` so Cabal knows where my modules are.
-
-Added a named executable stanza to the Cabal file so I can build a binary by that name and run it.
-
-Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what main function to use for that binary.
-
-Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
-
-Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
 
 
 ## Building and interacting with your program
@@ -174,7 +176,7 @@ main = putStrLn "hello"
 
 One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
 
-For now, we've left Main to be very simple, making it just a `putStrLn` of the string `"Hello"`. To validate that everything is working, lets build and run this mostly pointless program.
+For now, we've left Main to be very simple, making it just a `putStrLn` of the string `"Hello"`. To validate that everything is working, lets build and run this program.
 
 First we create our Cabal sandbox so that our dependencies are isolated to this project.
 
@@ -186,7 +188,7 @@ Then we install our dependencies. These should get installed into the
 Cabal sandbox package-db now that our sandbox has been created.
 Otherwise they'd get installed into our user package-db located in
 our home directory, which would be global to all the projects on our
-current user account.
+current user account. This can take some time on first run.
 
 ```bash
 $ cabal install --only-dependencies
@@ -220,7 +222,7 @@ $ cabal repl
 ```
 
 If you do, you should see a bunch of stuff about loading packages
-installed for the project and then a `Prelude>` prompt.
+installed for the project and then a `Prelude>` prompt. -- it takes me straight to main at this point?
 
 ```
 [1 of 1] Compiling Main             ( Main.hs, interpreted )
@@ -231,12 +233,37 @@ Prelude>
 Now we can load our `src/Main.hs` in the REPL.
 
 ```
-Prelude> :load src/Main.hs
-[1 of 1] Compiling Main             ( Main.hs, interpreted )
+$cabal repl
+Preprocessing executable 'bassbull' for bassbull-0.1.0.0...
+GHCi, version 7.8.3: http://www.haskell.org/ghc/  :? for help
+Loading package ghc-prim ... linking ... done.
+Loading package integer-gmp ... linking ... done.
+Loading package base ... linking ... done.
+Loading package array-0.5.0.0 ... linking ... done.
+Loading package deepseq-1.3.0.2 ... linking ... done.
+Loading package bytestring-0.10.4.0 ... linking ... done.
+Loading package containers-0.5.5.1 ... linking ... done.
+Loading package text-1.2.0.0 ... linking ... done.
+Loading package hashable-1.2.2.0 ... linking ... done.
+Loading package scientific-0.3.3.2 ... linking ... done.
+Loading package attoparsec-0.12.1.2 ... linking ... done.
+Loading package blaze-builder-0.3.3.4 ... linking ... done.
+Loading package unordered-containers-0.2.5.1 ... linking ... done.
+Loading package primitive-0.5.4.0 ... linking ... done.
+Loading package vector-0.10.12.1 ... linking ... done.
+Loading package cassava-0.4.2.0 ... linking ... done.
+[1 of 1] Compiling Main             ( src/Main.hs, interpreted )
+
+src/Main.hs:3:1: Warning:
+    Top-level binding with no type signature: main :: IO ()
 Ok, modules loaded: Main.
-Prelude> main
-hello
-Prelude> 
+*Main> :load src/Main.hs
+[1 of 1] Compiling Main             ( src/Main.hs, interpreted )
+
+src/Main.hs:3:1: Warning:
+    Top-level binding with no type signature: main :: IO ()
+Ok, modules loaded: Main.
+*Main>
 ```
 
 Becoming comfortable with the REPL can be a serious boon to productivity. There is editor integration for those that want it as well.
@@ -265,8 +292,6 @@ main = do
 
 Lets break down this code.
 
-First, we're importing our dependencies. Qualified imports let us give names to the namespaces we're importing and use those names as a prefix, such as `BL.ByteString`. This is used to refer to values and type constructors alike. In the case of `import Data.Csv` where we didn't qualify the import, we're bringing everything from that module into scope. This should be done only with modules that have names of things that won't conflict with anything else. Other modules like `Data.ByteString` and `Data.Vector` have a bunch of functions that are named identically to functions in the `Prelude` and should be qualified.
-
 ```haskell
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
@@ -274,18 +299,14 @@ import qualified Data.Vector as V
 import Data.Csv
 ```
 
-Here we're creating a type alias for `BaseballStats`. I made it a type alias for a few reasons. One is so I could put off talking about algebraic data types! I made it a type alias of the 4-tuple specifically because the Cassava library already understands how to translate CSV rows into tuples and our type here will "just work" as long as the columns that we say are `Int` actually are parseable as integral numbers. Haskell tuples are allowed to have heterogenous types and are defined primarily by their length. The parentheses and commas are used to signify them. For example, `(a, b)` would be both a valid value and type constructor for referring to 2-tuples, `(a, b, c)` for 3-tuples, and so forth.
+First, we're importing our dependencies. Qualified imports let us give names to the namespaces we're importing and use those names as a prefix, such as `BL.ByteString`. This is used to refer to values and type constructors alike. In the case of `import Data.Csv` where we didn't qualify the import (with `qualified`), we're bringing everything from that module into scope. This should be done only with modules that have names of things that won't conflict with anything else. Other modules like `Data.ByteString` and `Data.Vector` have a bunch of functions that are named identically to functions in the `Prelude` and should be qualified.
 
 ```haskell
 -- a simple type alias for data
 type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
 ```
 
-We need to read in a file so we can parse our CSV data. We called the lazy `ByteString` namespace `BL` using the `qualified` keyword in the import. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. You can read this out in English as `I take a FilePath as an argument and I return a ByteString after performing some side effects`. It returns ByteString wrapped in IO because it returns a means of obtaining bytes which must be tagged with IO, not the data directly without having first executed the side effects.
-
-You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
-
-We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`. Remember our tuples that we signified with parenthese earlier? Well, `()` is a sort of tuple too, but it's the 0-tuple! In Haskell we usually call it unit. It can't contain anything, it's a type that has a single value - `()`, that's it. It's often used to signify we don't return anything. Since there's usually no point in executing functions that don't return anything, `()` is often wrapped in `IO`. Printing strings are a good example of the result type `IO ()` as they do their work and return nothing. In Haskell you can't actually "return nothing", the concept doesn't even make sense, thus why we use `()` as the idiomatic "I got nothin' for ya" type & value. Usually if something returns `()` you won't even bother to bind to a name, you'll just ignore it.
+Here we're creating a type alias for `BaseballStats`. I made it a type alias for a few reasons. One is so I could put off talking about algebraic data types! I made it a type alias of the 4-tuple specifically because the Cassava library already understands how to translate CSV rows into tuples and our type here will "just work" as long as the columns that we say are `Int` actually are parseable as integral numbers. Haskell tuples are allowed to have heterogenous types and are defined primarily by their length. The parentheses and commas are used to signify them. For example, `(a, b)` would be both a valid value and type constructor for referring to 2-tuples, `(a, b, c)` for 3-tuples, and so forth.
 
 ```haskell
 main :: IO ()
@@ -293,24 +314,45 @@ main = do
   csvData <- BL.readFile "batting.csv"
 ```
 
-`v` is the type you see at the right with the type assignment operator `::` I'm assigning the type to dispatch the typeclass decode uses to parse csv data. See more about [the typeclass cassava uses for parsing csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
+We need to read in a file so we can parse our CSV data. We called the lazy `ByteString` namespace `BL` using the `qualified` keyword in the import. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. You can read this out in English as `I take a FilePath as an argument and I return a ByteString after performing some side effects`. It returns ByteString wrapped in IO because it returns a means of obtaining bytes which must be tagged with IO, not the data directly without having first executed the side effects. --confusingly worded, didn't really understand this.
 
-In this case, because I defined a `type` alias of a tuple for my record, I get my parsing code for free (already defined for tuples, `bytestring`, and `Int`).
+You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
+
+We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`. Remember our tuples that we signified with parenthese earlier? Well, `()` is a sort of tuple too, but it's the 0-tuple! In Haskell we usually call it unit. It can't contain anything, it's a type that has a single value - `()`, that's it. It's often used to signify we don't return anything. Since there's usually no point in executing functions that don't return anything, `()` is often wrapped in `IO`. Printing strings are a good example of the result type `IO ()` as they do their work and return nothing. In Haskell you can't actually "return nothing", the concept doesn't even make sense, thus why we use `()` as the idiomatic "I got nothin' for ya" type & value. Usually if something returns `()` you won't even bother to bind to a name, you'll just ignore it.
 
 ```haskell
   let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
 ```
 
-Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
+`v` is the type you see at the right with the type assignment operator `::` I'm assigning the type to dispatch the typeclass that `decode` uses to parse csv data. See more about [the typeclass cassava uses for parsing csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
+
+In this case, because I defined a `type` alias of a tuple for my record, I get my parsing code for free (already defined for tuples, `bytestring`, and `Int`).
+
+-- what does let do?
 
 
 ```haskell
   let summed = fmap (V.foldr summer 0) v
 ```
 
-In the above, we say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would in languages like Java require a "Builder" pattern. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
+Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
+
+We say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would require a "Builder" pattern in languages like Java. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
 
 ```haskell
+-- need to redo ghci repl stuff dealing with warnings like
+*Main> let appendOne = append [1]
+*Main> appendOne [2, 3]
+
+<interactive>:5:1: Warning:
+    Defaulting the following constraint(s) to type ‘Integer’
+      (Show a0) arising from a use of ‘print’ at <interactive>:5:1-16
+      (Num a0) arising from a use of ‘it’ at <interactive>:5:1-16
+    In a stmt of an interactive GHCi command: print it
+[1,2,3]
+
+
+
 -- first with list stuff
 Prelude> let append x y = x ++ y
 Prelude> :t append
@@ -326,6 +368,7 @@ Prelude> appendOne [4, 5, 6]
 -- now with a product/record, if that
 -- is confusing think "struct" but better.
 Prelude> data Person = Person String Int String deriving Show
+-- explain what deriving means
 
 Prelude> :t Person
 Person :: String -> Int -> String -> Person
@@ -346,7 +389,7 @@ Person "Chris" 415 "Allen"
 
 This lets us apply some, but not all, of the arguments to a function and pass around the result as a function expecting the rest of the arguments.
 
-Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0) v`  would require explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. This is also a transcript from my interactive `ghci` REPL.
+Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0) v`  would require explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. This is also a transcript from my interactive `ghci` REPL. I'll explain Either, Right, and Left after the REPL sample.
 
 
 ```haskell
@@ -359,7 +402,15 @@ Prelude> :t x
 x :: Either String Int
 
 Prelude> let addOne x = x + 1
+<interactive>:4:12: Warning:
+    This binding for ‘x’ shadows the existing binding
+      defined at <interactive>:3:5
 Prelude> addOne 2
+<interactive>:5:1: Warning:
+    Defaulting the following constraint(s) to type ‘Integer’
+      (Show a0) arising from a use of ‘print’ at <interactive>:5:1-8
+      (Num a0) arising from a use of ‘it’ at <interactive>:5:1-8
+    In a stmt of an interactive GHCi command: print it
 3
 
 Prelude> fmap addOne v
@@ -368,7 +419,7 @@ Prelude> fmap addOne x
 Left "blah"
 ```
 
-`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. Since if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness. The `:t` command is a command to my REPL, not part of the Haskell language. It's a way to request the type of an expression.
+`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. This is because if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness. The `:t` command is a command to my REPL, not part of the Haskell language. It's a way to request the type of an expression.
 
 `Either` isn't the only type we can map over.
 
@@ -381,7 +432,8 @@ Prelude> fmap multTwo myList
 [2,4,6]
 ```
 
-Here we have the list type, signified using the `[]` brackets and whatever type is inside it our list, in this case `Int`. With `Either` we have two possible types and `Functor` only lets us map over one of them, so the `Functor` instance for `Either` only applies our function over the happy path values. With `[a]` there's only one type inside of it, so it'll get applied regardless...or will it? What if I have an empty list?
+Here we have the list type, signified using the `[]` brackets and whatever type is inside in our list, in this case `Int`. With `Either` we have two possible types and `Functor` only lets us map over one of them, so the `Functor` instance for `Either` only applies our function over the happy path values. With `[a]` there's only one type inside of it, so it'll get applied regardless...or will it? What if I have an empty list?
+-- wheres `[a]` coming from?
 
 ```haskell
 Prelude> fmap multTwo []
@@ -401,9 +453,9 @@ incrementEither (Right numberWeWanted) = Right (addOne numberWeWanted)
 incrementEither (Left errorString) = Left errorString
 ```
 
-We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` are so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to numberWeWanted to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
+We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` are so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to `numberWeWanted`, to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
 
-I don't want to spent a lot of time talking about folds as it's something a lot of people have seen outside of Haskell. You might've seen it called `reduce`. Here are some examples of folds in Haskell. We're switching back to REPL demonstration again. I'll be demonstrating some things about function arity in Haskell as well - you don't have to name or explicitly bind arguments.
+I don't want to spent a lot of time talking about folds as it's something a lot of people have seen outside of Haskell. You might have seen it called `reduce`. Here are some examples of folds in Haskell. We're switching back to REPL demonstration again. I'll be demonstrating some things about function arity in Haskell as well - you don't have to name or explicitly bind arguments.
 
 ```haskell
 Prelude> :t foldr
@@ -434,7 +486,10 @@ addThings :: Num a => a -> a -> a
 -- addThings is the "eta reduced" addThings1 and addThings2
 -- same semantics, but with irrelevant argument names elided
 
+-- is this called point free style?
+
 Prelude> foldr (+) 0 [1, 2, 3, (-1)]
+-- worth explaining why we need to wrap negatives in ()
 5
 Prelude> foldr (addThings2) 0 [1, 2, 3, (-1)]
 5
@@ -444,12 +499,14 @@ Prelude> foldr (addThings) 0 [1, 2, 3, (-1)]
 5
 
 Prelude> foldr (++) [] [[(), ()], [()]]
+-- where did ++ come from? why can't I :t on it?
 [(),(),()]
 Prelude> foldr (++) [()] [[(), ()], [()]]
 [(),(),(),()]
 Prelude> foldr (++) [(), ()] [[(), ()], [()]]
 [(),(),(),(),()]
 
+--snd is short for second
 Prelude> snd ("blah", 2)
 2
 Prelude> :t snd
@@ -469,6 +526,7 @@ Prelude> snd (snd (snd ((), ((), ((), 1)))))
 1
 Prelude> (snd . snd . snd) ((), ((), ((), 1)))
 1
+-- you're totally losing me here with the ()'s. It's not lisp :)
 
 Prelude> :t snd
 snd :: (a, b) -> b
@@ -505,11 +563,16 @@ Prelude> foldr ((+) . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
 ```
 
 Okay, enough of the REPL jazz session.
+-- this was a bit long, not sure quite what we were trying to demonstrate here.
 
 Lastly we stringify the summed up count using `show`, then concatenate that with a string to describe what we're printing, then print the whole shebang using `putStrLn`. The `$` is just so everything to the right of the `$` gets evaluated before whatever is to the left. To see why I did that remove the `$` and build the code. Alternatively, I could've used parentheses in the usual fashion.
 
+-- need to explain `show` at some point.
+
 ```haskell
   putStrLn $ "Total atBats was: " ++ (show summed)
+  -- show the alternative code without $
+  -- where did summed come from? Throws an error for me
 ```
 
 `summer` is the function we are folding our `Vector` with. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but there's nothing wrong with using both.
@@ -564,6 +627,7 @@ where summer (_, _, _, atBats) sum = sum + atBats
 ```
 
 Next we'll make our extraction of the 'at bats' from the tuple more compositional. If you'd like to play with this further, consider rewriting our example program at the end of this article into using a Haskell record instead of a tuple. I used a tuple here because Cassava already understands how to parse them, sparing me having to write that code.
+-- Who is this for? If this is my first Haskell program then I have no idea what a Haskell record is or how I'd do this.
 
 First we'll add `fourth`:
 
@@ -585,6 +649,7 @@ where summer r n = n + fourth r
 ```
 
 Here we can use something called *eta reduction* to remove the explicit record and sum values to make it point-free. Since our function is really just about composing the extraction of the fourth value from the tuple and summing that value with the summed up `atBat` values so far, this makes the code quite concise.
+-- This should be higher up because you've already mentioned eta reduction
 
 You can read more about this in [the article on pointfree programming in Haskell](https://www.haskell.org/haskellwiki/Pointfree).
 
@@ -601,6 +666,7 @@ where summer = (+) . fourth
 ```
 
 First `fourth` gets applied to the `r` argument, then `(+)` is composed so that it is applied to the result of `fourth r` and the value `n`.
+-- What does the . do?
 
 We should also split out our decoding of `BaseballStats` from CSV data.
 
@@ -616,6 +682,8 @@ Into an independent function:
 baseballStats :: BL.ByteString -> Either String (V.Vector BaseballStats)
 baseballStats = decode NoHeader
 ```
+
+-- worth explaining here that we've curried baseballStats
 
 Then `summed` becomes:
 
@@ -648,6 +716,8 @@ main = do
   putStrLn $ "Total atBats was: " ++ (show summed)
   where summer = (+) . fourth
 ```
+
+-- should build and check results here
 
 
 ## Streaming
@@ -697,7 +767,9 @@ To:
 let summed = F.foldr summer 0 (baseballStats csvData)
 ```
 
-As we are no longer loading the entire dataset into a single Vector, rather we are incrementally processing the results.
+Because we are incrementally processing the results, not loading the entire dataset into a single Vector.
+
+-- Because Data.Csv.Streaming has the same API (decode noHeader) as Data.Csv, we don't need to change that part of our code
 
 The final result should look like:
 
