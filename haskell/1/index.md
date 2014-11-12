@@ -76,6 +76,8 @@ cabal.config
 *.aux
 ```
 
+You might be wondering why we're telling `git` to ignore something called a "cabal sandbox". Cabal, unlike the package managers in other language ecosystems, requires direct and transitive dependencies to have compatible versions. For contrast, Maven will use the "closest" version. To avoid packages having conflicts, Cabal introduced sandboxes which let you do builds of your projects in a way that doesn't use your user package-db. Your user package-db is global to all your builds on your user account and this is almost never what you want. This is not dissimilar from `virtualenv` in the Python community. The `.cabal-sandbox` directory is where our build artifacts will go when we build our project or test cases. We don't want to version control that as it would bloat out the git repository and doesn't need to be version controlled.
+
 
 ## Project layout
 
@@ -133,7 +135,7 @@ category:            Data
 build-type:          Simple
 cabal-version:       >=1.10
 
-executable garrulous
+executable bassbull
   ghc-options:         -Wall -threaded
   hs-source-dirs:      src
   main-is:             Main.hs
@@ -158,7 +160,7 @@ Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on 
 
 Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
 
-We included `garrulous` as a dependency for the executable stanza so that it can see the library.
+We included `bassbull` as a dependency for the executable stanza so that it can see the library.
 
 
 ## Building and interacting with your program
@@ -263,13 +265,29 @@ main = do
   where summer (name, year, team, atBats) n = n + atBats
 ```
 
-Lets break down this code a little.
+Lets break down this code.
 
-First, we need to read in a file. We called the lazy `ByteString` namespace `BL`. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. It returns ByteString wrapped in IO because it returns a means of obtaining bytes which must be tagged with IO, not just the data itself.
+First, we're importing our dependencies. Qualified imports let us give names to the namespaces we're importing and use those names as a prefix, such as `BL.ByteString`. This is used to refer to values and type constructors alike. In the case of `import Data.Csv` where we didn't qualify the import, we're bringing everything from that module into scope. This should be done only with modules that have names of things that won't conflict with anything else. Other modules like `Data.ByteString` and `Data.Vector` have a bunch of functions that are named identically to functions in the `Prelude` and should be qualified.
+
+```haskell
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Vector as V
+-- from cassava
+import Data.Csv
+```
+
+Here we're creating a type alias for `BaseballStats`. I made it a type alias for a few reasons. One is so I could put off talking about algebraic data types! I made it a type alias of the 4-tuple specifically because the Cassava library already understands how to translate CSV rows into tuples and our type here will "just work" as long as the columns that we say are `Int` actually are parseable as integral numbers. Haskell tuples are allowed to have heterogenous types and are defined primarily by their length. The parentheses and commas are used to signify them. For example, `(a, b)` would be both a valid value and type constructor for referring to 2-tuples, `(a, b, c)` for 3-tuples, and so forth.
+
+```haskell
+-- a simple type alias for data
+type BaseballStats = (BL.ByteString, Int, BL.ByteString, Int)
+```
+
+We need to read in a file so we can parse our CSV data. We called the lazy `ByteString` namespace `BL` using the `qualified` keyword in the import. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. You can read this out in English as `I take a FilePath as an argument and I return a ByteString after performing some side effects`. It returns ByteString wrapped in IO because it returns a means of obtaining bytes which must be tagged with IO, not the data directly without having first executed the side effects.
 
 You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
 
-We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`.
+We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`. Remember our tuples that we signified with parenthese earlier? Well, `()` is a sort of tuple too, but it's the 0-tuple! In Haskell we usually call it unit. It can't contain anything, it's a type that has a single value - `()`, that's it. It's often used to signify we don't return anything. Since there's usually no point in executing functions that don't return anything, `()` is often wrapped in `IO`. Printing strings are a good example of the result type `IO ()` as they do their work and return nothing. In Haskell you can't actually "return nothing", the concept doesn't even make sense, thus why we use `()` as the idiomatic "I got nothin' for ya" type & value. Usually if something returns `()` you won't even bother to bind to a name, you'll just ignore it.
 
 ```haskell
 main :: IO ()
@@ -292,14 +310,171 @@ Using the record summing function in the bottom where clause. First we fmap over
   let summed = fmap (V.foldr summer 0) v
 ```
 
+Fully explaining `fmap` would mean explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. Unlike previous code samples, this is a transcript from my interactive `ghci` REPL.
+
+
+```haskell
+Prelude> let v = Right 1 :: Either String Int
+Prelude> let x = Left "blah" :: Either String Int
+
+Prelude> :t v
+v :: Either String Int
+Prelude> :t x
+x :: Either String Int
+
+Prelude> let addOne x = x + 1
+Prelude> addOne 2
+3
+
+Prelude> fmap addOne v
+Right 2
+Prelude> fmap addOne x
+Left "blah"
+```
+
+`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. Since if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness. The `:t` command is a command to my REPL, not part of the Haskell language. It's a way to request the type of an expression.
+
+`Either` isn't the only type we can map over.
+
+```haskell
+Prelude> let myList = [1, 2, 3] :: [Int]
+Prelude> fmap addOne myList
+[2,3,4]
+Prelude> let multTwo x = x * 2
+Prelude> fmap multTwo myList
+[2,4,6]
+```
+
+Here we have the list type, signified using the `[]` brackets and whatever type is inside it our list, in this case `Int`. With `Either` we have two possible types and `Functor` only lets us map over one of them, so the `Functor` instance for `Either` only applies our function over the happy path values. With `[a]` there's only one type inside of it, so it'll get applied regardless...or will it? What if I have an empty list?
+
+```haskell
+Prelude> fmap multTwo []
+[]
+Prelude> fmap addOne []
+[]
+```
+
+Conveniently not only does `fmap` let us avoid manually pattern matching the `Left` and `Right` cases of `Either`, but it lets us not bother to manually recurse our list or pattern-match the empty list case. This helps us prevent making mistakes as well as clean up and abstract our code. In a less happy alternate universe, we would've had to write the following code. Written in typical code file style rather than for the REPL this time.
+
+```haskell
+addOne :: Int -> Int
+addOne x = x + 1 -- at least we can abstract this out
+
+incrementEither :: Either e Int -> Either e Int
+incrementEither (Right numberWeWanted) = Right (addOne numberWeWanted)
+incrementEither (Left errorString) = Left errorString
+```
+
+We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` are so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to numberWeWanted to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
+
+I don't want to spent a lot of time talking about folds as it's something a lot of people have seen outside of Haskell. You might've seen it called `reduce`. Here are some examples of folds in Haskell. We're switching back to REPL demonstration again. I'll be demonstrating some things about function arity in Haskell as well - you don't have to name or explicitly bind arguments.
+
+```haskell
+Prelude> :t foldr
+foldr :: (a -> b -> b) -> b -> [a] -> b
+
+Prelude> foldr (+) 0 [1, 2, 3]
+6
+Prelude> foldr (+) 1 [1, 2, 3]
+7
+Prelude> foldr (+) 2 [1, 2, 3]
+8
+Prelude> foldr (+) 2 [1, 2, 3, 4]
+12
+
+Prelude> let addThings2 x y = x + y
+Prelude> :t addThings2
+addThings2 :: Num a => a -> a -> a
+Prelude> :t (+)
+(+) :: Num a => a -> a -> a
+
+Prelude> let addThings1 x = (+) x
+Prelude> :t addThings1
+addThings1 :: Num a => a -> a -> a
+
+Prelude> let addThings = (+)
+Prelude> :t addThings
+addThings :: Num a => a -> a -> a
+
+Prelude> foldr (+) 0 [1, 2, 3, (-1)]
+5
+Prelude> foldr (addThings2) 0 [1, 2, 3, (-1)]
+5
+Prelude> foldr (addThings1) 0 [1, 2, 3, (-1)]
+5
+Prelude> foldr (addThings) 0 [1, 2, 3, (-1)]
+5
+
+Prelude> foldr (++) [] [[(), ()], [()]]
+[(),(),()]
+Prelude> foldr (++) [()] [[(), ()], [()]]
+[(),(),(),()]
+Prelude> foldr (++) [(), ()] [[(), ()], [()]]
+[(),(),(),(),()]
+
+Prelude> snd ("blah", 2)
+2
+Prelude> :t snd
+snd :: (a, b) -> b
+
+Prelude> let myList = [("blah", 1), ("woot", 2), ("woohoo", 10)]
+Prelude> foldr ((+) . snd) 0 myList
+13
+Prelude> foldr ((+) . snd) 1 myList
+14
+
+Prelude> snd ((), ((), ((), 1)))
+((),((),1))
+Prelude> snd (snd ((), ((), ((), 1))))
+((),1)
+Prelude> snd (snd (snd ((), ((), ((), 1)))))
+1
+Prelude> (snd . snd . snd) ((), ((), ((), 1)))
+1
+
+Prelude> :t snd
+snd :: (a, b) -> b
+Prelude> :t (snd . snd)
+(snd . snd) :: (a1, (a, c)) -> c
+Prelude> :t (snd . snd . snd)
+(snd . snd . snd) :: (a2, (a1, (a, c))) -> c
+
+Prelude> (take 0 $ repeat ((), ((), ((), 1))))
+[]
+Prelude> (take 1 $ repeat ((), ((), ((), 1))))
+[((),((),((),1)))]
+Prelude> (take 2 $ repeat ((), ((), ((), 1))))
+[((),((),((),1))),((),((),((),1)))]
+
+Prelude> foldr ((+) . snd . snd . snd) 0 (take 10 $ repeat ((), ((), ((), 1))))
+10
+Prelude> foldr ((+) . snd . snd . snd) 0 (take 0 $ repeat ((), ((), ((), 1))))
+0
+Prelude> foldr ((+) . snd . snd . snd) 0 []
+0
+Prelude> foldr ((+) . snd . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
+2
+
+-- What if I forget a snd?
+
+Prelude> foldr ((+) . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
+
+<interactive>:50:1:
+    No instance for (Num ((), t0)) arising from a use of ‘it’
+    In a stmt of an interactive GHCi command: print it
+
+-- Boom, type error.
+```
+
+Okay, enough of the REPL jazz session.
+
 Lastly we stringify the summed up count using `show`, then concatenate that with a string to describe what we're printing, then print the whole shebang using `putStrLn`. The `$` is just so everything to the right of the `$` gets evaluated before whatever is to the left. To see why I did that remove the `$` and build the code. Alternatively, I could've used parentheses in the usual fashion.
 
 ```haskell
   putStrLn $ "Total atBats was: " ++ (show summed)
 ```
 
-This is the folding function we mentioned earlier. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but
-there's nothing wrong with using both.
+`summer` is the function we are folding our `Vector` with. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but there's nothing wrong with using both.
 
 Our folding function here takes two arguments, the tuple record (we'll have many of those in the vector of records), and the sum of our data so far.
 
@@ -512,7 +687,7 @@ main = do
   where summer = (+) . fourth
 ```
 
-Because Haskell has abstractions like the `Foldable` typeclass, we can talk about folding a dataset without caring about the underlying implementation! We could've used the `foldr` from `Foldable` on our `Vector`, a `List`, a `Tree`, a `Map` - not just Cassava's streaming API.
+Because Haskell has abstractions like the `Foldable` typeclass, we can talk about folding a dataset without caring about the underlying implementation! We could've used the `foldr` from `Foldable` on our `Vector`, a `List`, a `Tree`, a `Map` - not just Cassava's streaming API. `foldr` from `Foldable` has the type: `Foldable t => (a -> b -> b) -> b -> t a -> b`. Note the similarity with the `foldr` for the list type, `(a -> b -> b) -> b -> [a] -> b`. What we've done is abstracted the specific type out and made it into a generic interface.
 
 
 ## Wrapping up
