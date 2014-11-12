@@ -301,14 +301,41 @@ In this case, because I defined a `type` alias of a tuple for my record, I get m
   let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
 ```
 
-Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats` We partially applied the `Vector` folding function `foldr` to the summing function which is how we're folding and the number `0` so we have a "start" value for the fold. Generally in Haskell we don't write raw loops or recurse directly, we use higher order functions and abstractions that wrap up and give names to common things programmers do. One of those very common things is folding data.
+Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
 
 
 ```haskell
   let summed = fmap (V.foldr summer 0) v
 ```
 
-Fully explaining `fmap` would mean explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. Unlike previous code samples, this is a transcript from my interactive `ghci` REPL.
+In the above, we say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would in languages like Java require a "Builder" pattern. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
+
+```haskell
+-- first with list stuff
+Prelude> let append x y = x ++ y
+Prelude> :t append
+append :: [a] -> [a] -> [a]
+Prelude> let appendOne = append [1]
+Prelude> appendOne [2, 3]
+[1,2,3]
+Prelude> appendOne []
+[1]
+Prelude> appendOne [4, 5, 6]
+[1,4,5,6]
+
+-- now with a product/record, if that
+-- is confusing think "struct" but better.
+Prelude> data Person = Person String Int String deriving Show
+Prelude> :t Person
+Person :: String -> Int -> String -> Person
+Prelude> let namedChris = Person "Chris"
+Prelude> namedChris 415 "Allen"
+Person "Chris" 415 "Allen"
+Prelude> Person "Chris" 415 "Allen"
+Person "Chris" 415 "Allen"
+```
+
+Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0) v`  would require explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. This is also a transcript from my interactive `ghci` REPL.
 
 
 ```haskell
