@@ -52,8 +52,8 @@ $ cabal init
 And the command I used to do it non-interactively (edit as appropriate for your project):
 
 ```bash
-$ cabal init -n -l BSD3 --is-executable --language=Haskell2010 -u
-bitemyapp.com -a 'Chris Allen' -c Data -s 'Churning some CSV data' -p bassbull
+$ cabal init -n -l BSD3 --is-executable --language=Haskell2010 -u bitemyapp.com \
+  -a 'Chris Allen' -c Data -s 'Churning some CSV data' -p bassbull
 ```
 
 I'm also going to add the gitignore from Github's gitignore repository plus some additions for Haskell so we don't accidentally check in unnecessary build artifacts or other things inessential to the project.
@@ -159,8 +159,6 @@ Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what m
 Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
 
 Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
-
-We included `bassbull` as a dependency for the executable stanza so that it can see the library.
 
 
 ## Building and interacting with your program
@@ -395,6 +393,8 @@ addThings1 :: Num a => a -> a -> a
 Prelude> let addThings = (+)
 Prelude> :t addThings
 addThings :: Num a => a -> a -> a
+-- addThings is the "eta reduced" addThings1 and addThings2
+-- same semantics, but with irrelevant argument names elided
 
 Prelude> foldr (+) 0 [1, 2, 3, (-1)]
 5
