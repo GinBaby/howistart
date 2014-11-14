@@ -22,14 +22,7 @@ After you've finished the install instructions, `ghc`, `cabal`, and `ghci` shoul
 ## What we're going to make
 
 
-We're going to write a little csv parser for some baseball data. You can download the data from [here](https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv). If you want to download it via the terminal on a Unix-alike (Mac, Linux, BSD, etc) you can do so via:
-
-```bash
-;; this should go after you've created the directory below. Not sure how to structure it.
-$ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv > batting.csv
-```
-
-It should be about 2.3 MB when it's all said and done.
+We're going to write a little csv parser for some baseball data. I don't care a whit about baseball, but it was the best example of free data I could find.
 
 
 ## Getting your project started
@@ -40,8 +33,18 @@ First we're going to make our directory for our project wherever we tend to stas
 ```bash
 $ mkdir bassbull
 $ cd bassbull
-$ git init
 ```
+
+Now we're going to download our test data now that we're inside the directory of our `bassbull` project.
+
+You can download the data from [here](https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv). If you want to download it via the terminal on a Unix-alike (Mac, Linux, BSD, etc) you can do so via:
+
+```bash
+$ curl -0 https://raw.githubusercontent.com/bitemyapp/csvtest/master/batting.csv > batting.csv
+```
+
+It should be about 2.3 MB when it's all said and done.
+
 
 Having done that, we're now going to use `Cabal`, our GHC Haskell dependency manager and build tool, to create some initial files for us. You have a couple options here. You can use the interactive helper or you can define everything non-interactively in one go.
 
@@ -58,11 +61,19 @@ $ cabal init -n -l BSD3 --is-executable --language=Haskell2010 -u bitemyapp.com 
   -a 'Chris Allen' -c Data -s 'Processing some CSV data' -p bassbull
 ```
 
-I'm also going to add the gitignore from Github's gitignore repository plus some additions for Haskell so we don't accidentally check in unnecessary build artifacts or other things inessential to the project.
+
+Before we start making changes, I'm going to init my version control (git, for me) so I can track my changes and not lose any work.
 
 ```bash
-$ vim .gitignore
+$ git init
+$ git add .
+$ git commit -am "Initial commit"
 ```
+
+I'm also going to add the gitignore from Github's gitignore repository plus some additions for Haskell so we don't accidentally check in unnecessary build artifacts or other things inessential to the project.
+
+This should go into a file named `.gitignore` at the top level of your
+bassbull project.
 
 ```
 dist
@@ -82,15 +93,20 @@ cabal.config
 *.aux
 ```
 
-You might be wondering why we're telling `git` to ignore something called a "cabal sandbox". Cabal, unlike the package managers in other language ecosystems, requires direct and transitive dependencies to have compatible versions. For contrast, Maven will use the "closest" version. To avoid packages having conflicts, Cabal introduced sandboxes which let you do builds of your projects in a way that doesn't use your user package-db. Your user package-db is global to all your builds on your user account and this is almost never what you want. This is not dissimilar from `virtualenv` in the Python community. The `.cabal-sandbox` directory is where our build artifacts will go when we build our project or test cases. We don't want to version control that as it would bloat out the git repository and doesn't need to be version controlled.
+You might be wondering why we're telling `git` to ignore something
+called a "cabal sandbox". Cabal, unlike the package managers in other
+language ecosystems, requires direct and transitive dependencies to
+have compatible versions. For contrast, Maven will use the "closest"
+version. To avoid packages having conflicts, Cabal introduced
+sandboxes which let you do builds of your projects in a way that
+doesn't use your user package-db. Your user package-db is global to
+all your builds on your user account and this is almost never what you
+want. This is not dissimilar from `virtualenv` in the Python
+community. The `.cabal-sandbox` directory is where our build artifacts
+will go when we build our project or test cases. We don't want to
+version control that as it would bloat out the git repository and
+doesn't need to be version controlled.
 
-Before we start making changes, I'm going to init my version control (git, for me) so I can track my changes and not lose any work.
-
-```bash
-$ git init
-$ git add .
-$ git commit -am "Initial commit"
-```
 
 ## Project layout
 
