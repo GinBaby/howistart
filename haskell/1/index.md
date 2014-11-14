@@ -502,17 +502,11 @@ addThings :: Num a => a -> a -> a
 -- addThings is the "eta reduced" addThings1 and addThings2
 -- same semantics, but with irrelevant argument names elided
 
--- is this called point free style?
+Prelude> :t (++)
+(++) :: [a] -> [a] -> [a]
 
-Prelude> foldr (+) 0 [1, 2, 3, (-1)]
--- worth explaining why we need to wrap negatives in ()
-5
-Prelude> foldr (addThings2) 0 [1, 2, 3, (-1)]
-5
-Prelude> foldr (addThings1) 0 [1, 2, 3, (-1)]
-5
-Prelude> foldr (addThings) 0 [1, 2, 3, (-1)]
-5
+Prelude> [1, 2, 3] ++ [4, 5, 6]
+[1,2,3,4,5,6]
 
 Prelude> foldr (++) [] [[(), ()], [()]]
 -- where did ++ come from? why can't I :t on it?
@@ -579,11 +573,13 @@ Prelude> foldr ((+) . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
 ```
 
 Okay, enough of the REPL jazz session.
--- this was a bit long, not sure quite what we were trying to demonstrate here.
 
-Lastly we stringify the summed up count using `show`, then concatenate that with a string to describe what we're printing, then print the whole shebang using `putStrLn`. The `$` is just so everything to the right of the `$` gets evaluated before whatever is to the left. To see why I did that remove the `$` and build the code. Alternatively, I could've used parentheses in the usual fashion.
-
--- need to explain `show` at some point.
+Lastly we stringify the summed up count using `show`, then concatenate
+that with a string to describe what we're printing, then print the
+whole shebang using `putStrLn`. The `$` is just so everything to the
+right of the `$` gets evaluated before whatever is to the left. To see
+why I did that remove the `$` and build the code. Alternatively, I
+could've used parentheses in the usual fashion.
 
 ```haskell
   putStrLn $ "Total atBats was: " ++ (show summed)
@@ -591,7 +587,72 @@ Lastly we stringify the summed up count using `show`, then concatenate that with
   -- where did summed come from? Throws an error for me
 ```
 
-`summer` is the function we are folding our `Vector` with. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but there's nothing wrong with using both.
+
+To explain `show` from above, `show` is a function from the
+typeclass `Show`. Here's how you can find out about it in your REPL.
+
+
+```haskell
+Prelude> :type show
+show :: Show a => a -> String
+
+Prelude> :info Show
+class Show a where
+  showsPrec :: Int -> a -> ShowS
+  show :: a -> String
+  showList :: [a] -> ShowS
+-- Defined in ‘GHC.Show’
+instance (Show a, Show b) => Show (Either a b)
+  -- Defined in ‘Data.Either’
+instance Show a => Show [a] -- Defined in ‘GHC.Show’
+instance Show Ordering -- Defined in ‘GHC.Show’
+instance Show a => Show (Maybe a) -- Defined in ‘GHC.Show’
+instance Show Integer -- Defined in ‘GHC.Show’
+instance Show Int -- Defined in ‘GHC.Show’
+instance Show Char -- Defined in ‘GHC.Show’
+instance Show Bool -- Defined in ‘GHC.Show’
+...
+```
+
+What `instance Show Integer` is telling us, is that `Integer` has
+implemented `Show`. This means we should be able to use `show` on
+something with that type. We can specialize the type of `show` to
+`Integer` in a few passes.
+
+```haskell
+show :: Show a => a -> String
+show :: Show Integer => Integer -> String
+-- you can just drop Show Integer =>, the typeclass
+-- instances associated with a specific type are 
+-- a given.
+show :: Integer -> String
+```
+
+In fact, we can even make a pointless version of show pre-specialized
+to `Integer`. Here's an example from my REPL:
+
+```haskell
+Prelude> :t show
+show :: Show a => a -> String
+Prelude> :t show myInteger
+show myInteger :: String
+Prelude> let integerShow = show :: Integer -> String
+Prelude> integerShow 1
+"1"
+Prelude> integerShow ("blah", ())
+
+<interactive>:11:13:
+    Couldn't match expected type ‘Integer’
+                with actual type ‘([Char], ())’
+    In the first argument of ‘integerShow’, namely ‘("blah", ())’
+    In the expression: integerShow ("blah", ())
+    In an equation for ‘it’: it = integerShow ("blah", ())
+Prelude> show ("blah", ())
+"(\"blah\",())"
+```
+
+
+Next we'll look at `summer`. `summer` is the function we are folding our `Vector` with. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but there's nothing wrong with using both.
 
 Our folding function here takes two arguments, the tuple record (we'll have many of those in the vector of records), and the sum of our data so far.
 
