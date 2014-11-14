@@ -834,3 +834,8 @@ Things to do after finishing this article:
 
 
 More than anything else, my greatest wish would be that you develop a richer and more rewarding relationship with learning. Haskell has been a big part of this in my life.
+
+
+Special thanks to [Daniel Compton](https://twitter.com/danielwithmusic) and
+[Julie Moronuki](https://twitter.com/argumatronic) for helping me test
+& edit this article. I couldn't have gotten it together without their help.
