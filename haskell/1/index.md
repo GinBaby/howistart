@@ -668,8 +668,9 @@ To this:
 where summer (_, _, _, atBats) sum = sum + atBats
 ```
 
+
 Next we'll make our extraction of the 'at bats' from the tuple more compositional. If you'd like to play with this further, consider rewriting our example program at the end of this article into using a Haskell record instead of a tuple. I used a tuple here because Cassava already understands how to parse them, sparing me having to write that code.
--- Who is this for? If this is my first Haskell program then I have no idea what a Haskell record is or how I'd do this.
+
 
 First we'll add `fourth`:
 
