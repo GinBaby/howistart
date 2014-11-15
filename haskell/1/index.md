@@ -603,7 +603,7 @@ class Show a where
   showList :: [a] -> ShowS
 -- Defined in ‘GHC.Show’
 instance (Show a, Show b) => Show (Either a b)
-  -- Defined in ‘Data.Either’
+-- Defined in ‘Data.Either’
 instance Show a => Show [a] -- Defined in ‘GHC.Show’
 instance Show Ordering -- Defined in ‘GHC.Show’
 instance Show a => Show (Maybe a) -- Defined in ‘GHC.Show’
