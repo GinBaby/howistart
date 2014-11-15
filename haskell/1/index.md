@@ -1,6 +1,7 @@
 My name is Chris, I teach Haskell to people that are new to programming and as well as long-time coders. Haskell is a general purpose programming language that is most useful to mere mortals.
 
-I'd like to show you how to write a package in Haskell and how you could hypothetically upload it to [Hackage](hackage.haskell.org).
+I'd going to show you how to write a package in Haskell and interact
+with the code inside of it.
 
 
 ## Installing tools for writing Haskell code
