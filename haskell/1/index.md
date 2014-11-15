@@ -372,31 +372,7 @@ Using the record summing function in the bottom where clause. First we fmap over
 We say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would require a "Builder" pattern in languages like Java. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
 
 ```haskell
-*Main> let appendOne = append [1]
-*Main> appendOne [2, 3]
-
-<interactive>:5:1: Warning:
-    Defaulting the following constraint(s) to type ‘Integer’
-      (Show a0) arising from a use of ‘print’ at <interactive>:5:1-16
-      (Num a0) arising from a use of ‘it’ at <interactive>:5:1-16
-    In a stmt of an interactive GHCi command: print it
-[1,2,3]
-
-
-
--- first with list stuff
-Prelude> let append x y = x ++ y
-Prelude> :type append
-append :: [a] -> [a] -> [a]
-Prelude> let appendOne = append [1]
-Prelude> appendOne [2, 3]
-[1,2,3]
-Prelude> appendOne []
-[1]
-Prelude> appendOne [4, 5, 6]
-[1,4,5,6]
-
--- now with a product/record, if that
+-- Person is a product/record, if that
 -- is confusing think "struct" but better.
 Prelude> data Person = Person String Int String deriving Show
 
