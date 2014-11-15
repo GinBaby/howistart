@@ -398,7 +398,6 @@ Prelude> appendOne [4, 5, 6]
 -- now with a product/record, if that
 -- is confusing think "struct" but better.
 Prelude> data Person = Person String Int String deriving Show
--- explain what deriving means
 
 Prelude> :t Person
 Person :: String -> Int -> String -> Person
