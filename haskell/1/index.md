@@ -667,8 +667,9 @@ Into:
 where summer r n = n + fourth r
 ```
 
+
 Here we can use something called *eta reduction* to remove the explicit record and sum values to make it point-free. Since our function is really just about composing the extraction of the fourth value from the tuple and summing that value with the summed up `atBat` values so far, this makes the code quite concise.
--- This should be higher up because you've already mentioned eta reduction
+
 
 You can read more about this in [the article on pointfree programming in Haskell](https://www.haskell.org/haskellwiki/Pointfree).
 
