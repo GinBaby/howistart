@@ -685,8 +685,18 @@ to:
 where summer = (+) . fourth
 ```
 
-First `fourth` gets applied to the `r` argument, then `(+)` is composed so that it is applied to the result of `fourth r` and the value `n`.
--- What does the . do?
+`.` is how we compose functions in Haskell. The entire definition of
+`.` is:
+
+```haskell
+(f . g) x = f (g x)
+```
+
+So if we `multiplyByTwo . addOne` we're adding one, then passing that
+result to the `multiplyByTwo` function. First `fourth` gets applied to
+the `r` argument, then `(+)` is composed so that it is applied to the
+result of `fourth r` and the value `n`.
+
 
 We should also split out our decoding of `BaseballStats` from CSV data.
 
