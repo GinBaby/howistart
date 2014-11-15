@@ -1,13 +1,13 @@
-My name is Chris, I teach Haskell to people that are new to programming and as well as long-time coders. Haskell is a general purpose programming language that is most useful to mere mortals.
+My name is Chris. I teach Haskell to people that are new to programming and as well as long-time coders. Haskell is a general purpose programming language that is most useful to mere mortals.
 
-I'd going to show you how to write a package in Haskell and interact
+I'm going to show you how to write a package in Haskell and interact
 with the code inside of it.
 
 
 ## Installing tools for writing Haskell code
 
 
-The most popular compiler for Haskell is `GHC` and you use `Cabal` along-side `GHC` to manage projects and their dependencies. Packaging itself is part of `GHC` via `ghc-pkg`.
+The most popular compiler for Haskell is `GHC` and you use `Cabal` alongside `GHC` to manage projects and their dependencies. Packaging itself is part of `GHC` via `ghc-pkg`.
 
 To get GHC and Cabal installed, use one of the following links:
 
@@ -105,7 +105,7 @@ all your builds on your user account and this is almost never what you
 want. This is not dissimilar from `virtualenv` in the Python
 community. The `.cabal-sandbox` directory is where our build artifacts
 will go when we build our project or test cases. We don't want to
-version control that as it would bloat out the git repository and
+version control that as it would bloat the git repository and
 doesn't need to be version controlled.
 
 
@@ -205,7 +205,7 @@ main = putStrLn "hello"
 
 One thing to note is that for a module to work as a `main-is` target for GHC, it must have a function named `main` and itself be named `Main`. Most people make little wrapper `Main` modules to satisfy this, sometimes with argument parsing and handling done via libraries like [optparse-applicative](https://github.com/pcapriotti/optparse-applicative).
 
-For now, we've left Main to be very simple, making it just a `putStrLn` of the string `"Hello"`. To validate that everything is working, lets build and run this program.
+For now, we've left Main very simple, making it just a `putStrLn` of the string `"Hello"`. To validate that everything is working, let's build and run this program.
 
 First we create our Cabal sandbox so that our dependencies are isolated to this project.
 
@@ -237,14 +237,14 @@ hello
 $
 ```
 
-If that worked, lets move onto writing a little csv processor.
+If that worked, let's move onto writing a little csv processor.
 
 ## Writing a program to process csv data
 
 
 One thing to note before we begin is that you can fire up a project-aware Haskell REPL using `cabal repl`. The benefit of doing so is that you can write and type-check code interactively as you explore new and unfamiliar libraries or just to refresh your memory about existing code.
 
-You can do so by running it in your shell like so.
+You can do so by running it in your shell like so:
 
 ```bash
 $ cabal repl
@@ -319,7 +319,7 @@ main = do
   where summer (name, year, team, atBats) n = n + atBats
 ```
 
-Lets break down this code.
+Let's break down this code.
 
 ```haskell
 import qualified Data.ByteString.Lazy as BL
@@ -343,7 +343,7 @@ main = do
   csvData <- BL.readFile "batting.csv"
 ```
 
-We need to read in a file so we can parse our CSV data. We called the lazy `ByteString` namespace `BL` using the `qualified` keyword in the import. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. You can read this out in English as `I take a FilePath as an argument and I return a ByteString after performing some side effects`. It returns ByteString wrapped in IO because it returns a means of obtaining bytes which must be tagged with IO, not the data directly without having first executed the side effects. --confusingly worded, didn't really understand this.
+We need to read in a file so we can parse our CSV data. We called the lazy `ByteString` namespace `BL` using the `qualified` keyword in the import. From that namespace we used `BL.readFile` which has type `FilePath -> IO ByteString`. You can read this in English as `I take a FilePath as an argument and I return a ByteString after performing some side effects`. 
 
 You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
 
