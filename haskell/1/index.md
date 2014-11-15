@@ -187,7 +187,7 @@ A few notable changes:
 * Set `hs-source-dirs` to `src` so Cabal knows where my modules are.
 * Added a named executable stanza to the Cabal file so I can build a binary by that name and run it.
 * Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what main function to use for that binary.
-* Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
+* Set `ghc-options` to `-Wall` so we get the *rather* handy warnings GHC offers on top of the usual type checking.
 * Added the libraries our project will use to `build-depends`.
 
 
@@ -355,8 +355,6 @@ We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns.
 `v` is the type you see at the right with the type assignment operator `::` I'm assigning the type to dispatch the typeclass that `decode` uses to parse csv data. See more about [the typeclass cassava uses for parsing csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
 
 In this case, because I defined a `type` alias of a tuple for my record, I get my parsing code for free (already defined for tuples, `bytestring`, and `Int`).
-
--- what does let do?
 
 
 ```haskell
