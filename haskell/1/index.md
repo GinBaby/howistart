@@ -520,6 +520,12 @@ Okay, enough of the REPL jazz session.
 
 Now back to the CSV processing code!
 
+
+```haskell
+  putStrLn $ "Total atBats was: " ++ (show summed)
+```
+
+
 Lastly we stringify the summed up count using `show`, then concatenate
 that with a string to describe what we're printing, then print the
 whole shebang using `putStrLn`. The `$` is just so everything to the
@@ -527,9 +533,6 @@ right of the `$` gets evaluated before whatever is to the left. To see
 why I did that remove the `$` and build the code. Alternatively, I
 could've used parentheses in the usual fashion.
 
-```haskell
-  putStrLn $ "Total atBats was: " ++ (show summed)
-```
 
 
 To explain `show` from above, `show` is a function from the
