@@ -793,9 +793,8 @@ To:
 let summed = F.foldr summer 0 (baseballStats csvData)
 ```
 
-Because we are incrementally processing the results, not loading the entire dataset into a single Vector.
-
--- Because Data.Csv.Streaming has the same API (decode noHeader) as Data.Csv, we don't need to change that part of our code
+We are incrementally processing the results, not loading the entire
+dataset into a Vector.
 
 The final result should look like:
 
