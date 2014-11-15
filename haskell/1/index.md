@@ -371,7 +371,6 @@ Using the record summing function in the bottom where clause. First we fmap over
 We say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would require a "Builder" pattern in languages like Java. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
 
 ```haskell
--- need to redo ghci repl stuff dealing with warnings like
 *Main> let appendOne = append [1]
 *Main> appendOne [2, 3]
 
