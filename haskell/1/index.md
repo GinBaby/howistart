@@ -516,6 +516,10 @@ Prelude> "hello, " ++ "world!"
 
 Okay, enough of the REPL jazz session.
 
+<hr>
+
+Now back to the CSV processing code!
+
 Lastly we stringify the summed up count using `show`, then concatenate
 that with a string to describe what we're printing, then print the
 whole shebang using `putStrLn`. The `$` is just so everything to the
@@ -525,8 +529,6 @@ could've used parentheses in the usual fashion.
 
 ```haskell
   putStrLn $ "Total atBats was: " ++ (show summed)
-  -- show the alternative code without $
-  -- where did summed come from? Throws an error for me
 ```
 
 
