@@ -713,8 +713,6 @@ baseballStats :: BL.ByteString -> Either String (V.Vector BaseballStats)
 baseballStats = decode NoHeader
 ```
 
--- worth explaining here that we've curried baseballStats
-
 Then `summed` becomes:
 
 ```haskell
