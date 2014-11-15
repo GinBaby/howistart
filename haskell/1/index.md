@@ -737,8 +737,14 @@ main = do
   where summer = (+) . fourth
 ```
 
--- should build and check results here
+Now we're going to double-check that our code is working:
 
+```bash
+$ cabal build
+...(stuff happens)...
+$ ./dist/build/bassbull/bassbull
+Total atBats was: Right 4858210
+```
 
 ## Streaming
 
