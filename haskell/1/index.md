@@ -386,7 +386,7 @@ We say `V.foldr` is partially applied because we haven't applied all of the argu
 
 -- first with list stuff
 Prelude> let append x y = x ++ y
-Prelude> :t append
+Prelude> :type append
 append :: [a] -> [a] -> [a]
 Prelude> let appendOne = append [1]
 Prelude> appendOne [2, 3]
@@ -400,7 +400,7 @@ Prelude> appendOne [4, 5, 6]
 -- is confusing think "struct" but better.
 Prelude> data Person = Person String Int String deriving Show
 
-Prelude> :t Person
+Prelude> :type Person
 Person :: String -> Int -> String -> Person
 
 Prelude> :t Person "Chris" 415
@@ -419,7 +419,14 @@ Person "Chris" 415 "Allen"
 
 This lets us apply some, but not all, of the arguments to a function and pass around the result as a function expecting the rest of the arguments.
 
-Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0) v`  would require explaining `Functor`. I don't want to belabor specific concepts *too* much, but I think a quick demonstration of `fmap` and `foldr` would help here. This is also a transcript from my interactive `ghci` REPL. I'll explain Either, Right, and Left after the REPL sample.
+Fully explaining the `fmap` in  `let summed = fmap (V.foldr summer 0)
+v`  would require explaining `Functor`. I don't want to belabor
+specific concepts *too* much, but I think a quick demonstration of
+`fmap` and `foldr` would help here. This is also a transcript from my
+interactive `ghci` REPL. I'll explain Either, Right, and Left after
+the REPL sample. The `:type` or `:t` command is a command to my `ghci`
+REPL, not part of the Haskell language. It's a way to request the
+type of an expression.
 
 
 ```haskell
@@ -449,7 +456,7 @@ Prelude> fmap addOne x
 Left "blah"
 ```
 
-`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. This is because if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness. The `:t` command is a command to my REPL, not part of the Haskell language. It's a way to request the type of an expression.
+`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. This is because if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness.
 
 `Either` isn't the only type we can map over.
 
@@ -462,8 +469,13 @@ Prelude> fmap multTwo myList
 [2,4,6]
 ```
 
-Here we have the list type, signified using the `[]` brackets and whatever type is inside in our list, in this case `Int`. With `Either` we have two possible types and `Functor` only lets us map over one of them, so the `Functor` instance for `Either` only applies our function over the happy path values. With `[a]` there's only one type inside of it, so it'll get applied regardless...or will it? What if I have an empty list?
--- wheres `[a]` coming from?
+Here we have the list type, signified using the `[]` brackets and
+whatever type is inside in our list, in this case `Int`. With `Either`
+we have two possible types and `Functor` only lets us map over one of
+them, so the `Functor` instance for `Either` only applies our function
+over the happy path values. With the type `[a]` there's only one type
+inside of it, so it'll get applied regardless...or will it? What if
+I have an empty list?
 
 ```haskell
 Prelude> fmap multTwo []
