@@ -250,12 +250,12 @@ $ cabal repl
 ```
 
 If you do, you should see a bunch of stuff about loading packages
-installed for the project and then a `Prelude>` prompt. -- it takes me straight to main at this point?
+installed for the project and then a `Prelude Main>` prompt.
 
 ```
 [1 of 1] Compiling Main             ( Main.hs, interpreted )
 Ok, modules loaded: Main.
-Prelude>
+Prelude Main>
 ```
 
 Now we can load our `src/Main.hs` in the REPL.
@@ -531,8 +531,13 @@ that with a string to describe what we're printing, then print the
 whole shebang using `putStrLn`. The `$` is just so everything to the
 right of the `$` gets evaluated before whatever is to the left. To see
 why I did that remove the `$` and build the code. Alternatively, I
-could've used parentheses in the usual fashion.
+could've used parentheses in the usual fashion. That would look like
+the following.
 
+
+```haskell
+  putStrLn ("Total atBats was: " ++ (show summed))
+```
 
 
 To explain `show` from above, `show` is a function from the
