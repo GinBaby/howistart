@@ -361,6 +361,11 @@ In this case, because I defined a `type` alias of a tuple for my record, I get m
   let summed = fmap (V.foldr summer 0) v
 ```
 
+Here we're using a `let` expression to bind the expression `fmap
+(V.foldr summer 0) v` to the name `summed` so that the expressions
+that follow it can refer to `summed` without repeating all the same
+code.
+
 Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
 
 We say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would require a "Builder" pattern in languages like Java. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
