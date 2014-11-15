@@ -131,6 +131,20 @@ $ tree
 4 directories, 7 files
 ```
 
+
+Here's where each of those files are going to come from.
+
+
+* `cabal init` should have generated `LICENSE`, `Setup.hs`,
+and `bassbull.cabal`.
+
+* `cabal sandbox init` should have generated `cabal.sandbox.config`
+
+* You'll need to `mkdir src` and `touch src/Main.hs` for your
+`src/Main.hs` file to exist and that's where we'll be putting our
+code.
+
+
 Ordinarily I'd structure things a little more, but there isn't a lot to this project. Onward!
 
 
