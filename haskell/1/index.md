@@ -171,7 +171,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable bassbull
-  ghc-options:         -Wall -threaded
+  ghc-options:         -Wall
   hs-source-dirs:      src
   main-is:             Main.hs
   build-depends:       base >= 4.7 && <5,
@@ -188,9 +188,7 @@ A few notable changes:
 * Added a named executable stanza to the Cabal file so I can build a binary by that name and run it.
 * Set `main-is` to `Main.hs` in the executable stanza so the compiler knows what main function to use for that binary.
 * Set `ghc-options` to `-Wall` so I get the *rather* handy warnings GHC offers on top of the usual type checking.
-* Added `-threaded` to the `ghc-options` for the executable as we'll be taking advantage of threading later.
-* Added libraries our project will depend on
-
+* Added the libraries our project will use to `build-depends`.
 
 
 ## Building and interacting with your program
