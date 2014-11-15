@@ -263,7 +263,7 @@ Prelude>
 Now we can load our `src/Main.hs` in the REPL.
 
 ```
-$cabal repl
+$ cabal repl
 Preprocessing executable 'bassbull' for bassbull-0.1.0.0...
 GHCi, version 7.8.3: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
@@ -485,7 +485,13 @@ incrementEither (Left errorString) = Left errorString
 
 We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` are so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to `numberWeWanted`, to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
 
-I don't want to spent a lot of time talking about folds as it's something a lot of people have seen outside of Haskell. You might have seen it called `reduce`. Here are some examples of folds in Haskell. We're switching back to REPL demonstration again. I'll be demonstrating some things about function arity in Haskell as well - you don't have to name or explicitly bind arguments.
+As we process the CSV data we're going to be doing so by *folding* the
+data. This is a general model for understanding how you process data
+that extends beyond specific programming languages. You might have
+seen `fold` called `reduce`. Here are some examples of folds and
+list/string concatenation in Haskell. We're switching back to REPL
+demonstration again.
+
 
 ```haskell
 Prelude> :t foldr
@@ -500,90 +506,13 @@ Prelude> foldr (+) 2 [1, 2, 3]
 Prelude> foldr (+) 2 [1, 2, 3, 4]
 12
 
-Prelude> let addThings2 x y = x + y
-Prelude> :t addThings2
-addThings2 :: Num a => a -> a -> a
-Prelude> :t (+)
-(+) :: Num a => a -> a -> a
-
-Prelude> let addThings1 x = (+) x
-Prelude> :t addThings1
-addThings1 :: Num a => a -> a -> a
-
-Prelude> let addThings = (+)
-Prelude> :t addThings
-addThings :: Num a => a -> a -> a
--- addThings is the "eta reduced" addThings1 and addThings2
--- same semantics, but with irrelevant argument names elided
-
 Prelude> :t (++)
 (++) :: [a] -> [a] -> [a]
 
 Prelude> [1, 2, 3] ++ [4, 5, 6]
 [1,2,3,4,5,6]
-
-Prelude> foldr (++) [] [[(), ()], [()]]
--- where did ++ come from? why can't I :t on it?
-[(),(),()]
-Prelude> foldr (++) [()] [[(), ()], [()]]
-[(),(),(),()]
-Prelude> foldr (++) [(), ()] [[(), ()], [()]]
-[(),(),(),(),()]
-
---snd is short for second
-Prelude> snd ("blah", 2)
-2
-Prelude> :t snd
-snd :: (a, b) -> b
-
-Prelude> let myList = [("blah", 1), ("woot", 2), ("woohoo", 10)]
-Prelude> foldr ((+) . snd) 0 myList
-13
-Prelude> foldr ((+) . snd) 1 myList
-14
-
-Prelude> snd ((), ((), ((), 1)))
-((),((),1))
-Prelude> snd (snd ((), ((), ((), 1))))
-((),1)
-Prelude> snd (snd (snd ((), ((), ((), 1)))))
-1
-Prelude> (snd . snd . snd) ((), ((), ((), 1)))
-1
--- you're totally losing me here with the ()'s. It's not lisp :)
-
-Prelude> :t snd
-snd :: (a, b) -> b
-Prelude> :t (snd . snd)
-(snd . snd) :: (a1, (a, c)) -> c
-Prelude> :t (snd . snd . snd)
-(snd . snd . snd) :: (a2, (a1, (a, c))) -> c
-
-Prelude> (take 0 $ repeat ((), ((), ((), 1))))
-[]
-Prelude> (take 1 $ repeat ((), ((), ((), 1))))
-[((),((),((),1)))]
-Prelude> (take 2 $ repeat ((), ((), ((), 1))))
-[((),((),((),1))),((),((),((),1)))]
-
-Prelude> foldr ((+) . snd . snd . snd) 0 (take 10 $ repeat ((), ((), ((), 1))))
-10
-Prelude> foldr ((+) . snd . snd . snd) 0 (take 0 $ repeat ((), ((), ((), 1))))
-0
-Prelude> foldr ((+) . snd . snd . snd) 0 []
-0
-Prelude> foldr ((+) . snd . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
-2
-
--- What if I forget a snd?
-
-Prelude> foldr ((+) . snd . snd) 0 (take 2 $ repeat ((), ((), ((), 1))))
-
-<interactive>:50:1:
-    No instance for (Num ((), t0)) arising from a use of ‘it’
-    In a stmt of an interactive GHCi command: print it
-
--- Boom, type error.
+Prelude> "hello, " ++ "world!"
+"hello, world!"
 ```
 
 Okay, enough of the REPL jazz session.
