@@ -347,13 +347,13 @@ We need to read in a file so we can parse our CSV data. We called the lazy `Byte
 
 You can see [the type of `BL.readFile` here](http://hackage.haskell.org/package/bytestring-0.10.4.0/docs/Data-ByteString-Lazy.html#v:readFile).
 
-We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`. Remember our tuples that we signified with parenthese earlier? Well, `()` is a sort of tuple too, but it's the 0-tuple! In Haskell we usually call it unit. It can't contain anything, it's a type that has a single value - `()`, that's it. It's often used to signify we don't return anything. Since there's usually no point in executing functions that don't return anything, `()` is often wrapped in `IO`. Printing strings are a good example of the result type `IO ()` as they do their work and return nothing. In Haskell you can't actually "return nothing", the concept doesn't even make sense, thus why we use `()` as the idiomatic "I got nothin' for ya" type & value. Usually if something returns `()` you won't even bother to bind to a name, you'll just ignore it.
+We're binding over the `IO ByteString` that `BL.readFile "batting.csv"` returns. `csvData` has type `ByteString` due to binding over `IO`. Remember our tuples that we signified with parentheses earlier? Well, `()` is a sort of tuple too, but it's the 0-tuple! In Haskell we usually call it unit. It can't contain anything; it's a type that has a single value - `()`, that's it. It's often used to signify we don't return anything. Since there's usually no point in executing functions that don't return anything, `()` is often wrapped in `IO`. Printing strings are a good example of the result type `IO ()` as they do their work and return nothing. In Haskell you can't actually "return nothing;" the concept doesn't even make sense. Thus we use `()` as the idiomatic "I got nothin' for ya" type and value. Usually if something returns `()` you won't even bother to bind to a name, you'll just ignore it.
 
 ```haskell
   let v = decode NoHeader csvData :: Either String (V.Vector BaseballStats)
 ```
 
-`v` is the type you see at the right with the type assignment operator `::` I'm assigning the type to dispatch the typeclass that `decode` uses to parse csv data. See more about [the typeclass cassava uses for parsing csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
+`v` has the type you see at the right with the type assignment operator `::` I'm assigning the type to dispatch the typeclass that `decode` uses to parse csv data. See more about [the typeclass cassava uses for parsing csv data here](http://hackage.haskell.org/package/cassava-0.4.2.0/docs/Data-Csv.html#t:FromRecord).
 
 In this case, because I defined a `type` alias of a tuple for my record, I get my parsing code for free (already defined for tuples, `bytestring`, and `Int`).
 
@@ -367,7 +367,7 @@ Here we're using a `let` expression to bind the expression `fmap
 that follow it can refer to `summed` without repeating all the same
 code.
 
-Using the record summing function in the bottom where clause. First we fmap over the `Either String (V.Vector BaseballStats)` this lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
+First we fmap over the `Either String (V.Vector BaseballStats)`. This lets us apply `(V.foldr summer 0)` to `V.Vector BaseballStats`. We partially applied the `Vector` folding function `foldr` to the summing function and the number `0`. The number `0` here is our "start" value for the fold. Generally in Haskell we don't use recursion directly. Instead in Haskell we use higher order functions and abstractions, giving names to common things programmers do in a way that lets us be more productive. One of those very common things is folding data. You're going to see examples of folding and the use `fmap` from `Functor` in a bit.
 
 We say `V.foldr` is partially applied because we haven't applied all of the arguments yet. Haskell has something called currying built into all functions by default which lets us avoid some tedious work that would require a "Builder" pattern in languages like Java. Unlike previous code samples, these examples are using my interactive `ghci` REPL.
 
@@ -432,7 +432,7 @@ Prelude> fmap addOne x
 Left "blah"
 ```
 
-`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types, you can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case, this is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. This is because if you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness.
+`Either` in Haskell is used to signify cases where we might get values of one of two possible types. `Either String Int` is a way of saying, "you'll get either a `String` or an `Int`". This is an example of sum types. You can think of them as a way to say `or` in your type, where a `struct` or `class` would let you say `and`. `Either` has two constructors, `Right` and `Left`. Culturally in Haskell `Left` signifies an "error" case. This is partly why the `Functor` instance for `Either` maps over the `Right` constructor but not the `Left`. If you have an error value, you can't keep applying your happy path functions. In the case of `Either String Int`, `String` would be our error value in a `Left` constructor and `Int` would be the happy-path "yep, we're good" value in the `Right` constructor. Also, Haskell has type inference. You don't have to declare types explicitly like I did in the example from my REPL transcript - I did so for the sake of explicitness.
 
 `Either` isn't the only type we can map over.
 
@@ -460,7 +460,7 @@ Prelude> fmap addOne []
 []
 ```
 
-Conveniently not only does `fmap` let us avoid manually pattern matching the `Left` and `Right` cases of `Either`, but it lets us not bother to manually recurse our list or pattern-match the empty list case. This helps us prevent making mistakes as well as clean up and abstract our code. In a less happy alternate universe, we would've had to write the following code. Written in typical code file style rather than for the REPL this time.
+Conveniently not only does `fmap` let us avoid manually pattern matching the `Left` and `Right` cases of `Either`, but it lets us not bother to manually recurse our list or pattern-match the empty list case. This helps us prevent mistakes as well as clean up and abstract our code. In a less happy alternate universe, we would've had to write the following code, written in typical code file style rather than for the REPL this time:
 
 ```haskell
 addOne :: Int -> Int
@@ -471,7 +471,7 @@ incrementEither (Right numberWeWanted) = Right (addOne numberWeWanted)
 incrementEither (Left errorString) = Left errorString
 ```
 
-We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` are so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to `numberWeWanted`, to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
+We use parens on the left-hand side here to pattern match at the function declaration level on whether our `Either e Int` is `Right` or `Left`. Parentheses wrap `(addOne numberWeWanted)` so we don't try to erroneously pass two arguments to `Right` when we mean to pass the result of applying `addOne` to `numberWeWanted`, to `Right`. If our value is `Right 1` this is returning `Right (addOne 1)` which reduces to `Right 2`.
 
 As we process the CSV data we're going to be doing so by *folding* the
 data. This is a general model for understanding how you process data
@@ -515,7 +515,7 @@ Now back to the CSV processing code!
 ```
 
 
-Lastly we stringify the summed up count using `show`, then concatenate
+Last, we stringify the summed up count using `show`, then concatenate
 that with a string to describe what we're printing, then print the
 whole shebang using `putStrLn`. The `$` is just so everything to the
 right of the `$` gets evaluated before whatever is to the left. To see
@@ -529,8 +529,8 @@ the following.
 ```
 
 
-To explain `show` from above, `show` is a function from the
-typeclass `Show`. Here's how you can find out about it in your REPL.
+`Show` is a function from the
+typeclass `Show`. Here's how you can find out about it in your REPL:
 
 
 ```haskell
@@ -555,7 +555,7 @@ instance Show Bool -- Defined in ‘GHC.Show’
 ...
 ```
 
-What `instance Show Integer` is telling us, is that `Integer` has
+What `instance Show Integer` is telling us is that `Integer` has
 implemented `Show`. This means we should be able to use `show` on
 something with that type. We can specialize the type of `show` to
 `Integer` in a few passes.
@@ -595,7 +595,7 @@ Prelude> show ("blah", ())
 
 Next we'll look at `summer`. `summer` is the function we are folding our `Vector` with. You can hang `where` clauses off of functions which are a bit like `let` but they come last. `where` clauses are more common in Haskell than `let` clauses, but there's nothing wrong with using both.
 
-Our folding function here takes two arguments, the tuple record (we'll have many of those in the vector of records), and the sum of our data so far.
+Our folding function here takes two arguments: the tuple record (we'll have many of those in the vector of records), and the sum of our data so far.
 
 Here `n` is the sum we're carrying along as fold the `Vector` of `BaseballStats`.
 
@@ -692,8 +692,8 @@ where summer = (+) . fourth
 (f . g) x = f (g x)
 ```
 
-So if we `multiplyByTwo . addOne` we're adding one, then passing that
-result to the `multiplyByTwo` function. First `fourth` gets applied to
+So, for example, if we `multiplyByTwo . addOne` we're adding one, then passing that
+result to the `multiplyByTwo` function. In the csv parser code, first `fourth` gets applied to
 the `r` argument, then `(+)` is composed so that it is applied to the
 result of `fourth r` and the value `n`.
 
